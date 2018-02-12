@@ -1,0 +1,14 @@
+﻿<%@ Master Language="C#" Inherits="ATMWeb.Master" %>
+<!DOCTYPE html>
+<html>
+<head runat="server">
+	<title>Insert Title Here</title>
+</head>
+<body>
+<div id="container">
+<form runat="server">
+    <asp:ContentPlaceHolder id="Main" runat="server" /> 
+</form>
+</div>
+</body>
+</html>
