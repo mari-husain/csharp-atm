@@ -27,7 +27,19 @@ namespace ATMWeb {
 		
 		protected System.Web.UI.WebControls.TextBox PINText;
 		
-		protected System.Web.UI.WebControls.Button Login;
+		protected System.Web.UI.WebControls.Panel formSignUp;
+		
+		protected System.Web.UI.WebControls.Panel formSignupError;
+		
+		protected System.Web.UI.WebControls.Label lblSignupError;
+		
+		protected System.Web.UI.WebControls.TextBox firstNameSignupText;
+		
+		protected System.Web.UI.WebControls.TextBox lastNameSignupText;
+		
+		protected System.Web.UI.WebControls.TextBox PINSignupText;
+		
+		protected System.Web.UI.WebControls.TextBox PINSignupConfirmText;
 		
 		protected System.Web.UI.WebControls.Panel formTransaction;
 	}

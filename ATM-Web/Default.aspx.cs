@@ -35,9 +35,9 @@ namespace ATMWeb
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(
                     new MediaTypeWithQualityHeaderValue("application/json"));
-
-                loginErrorText = errorLabel;
             }
+
+            loginErrorText = errorLabel;
         }
 
         // Called before the page is rendered.
@@ -47,6 +47,7 @@ namespace ATMWeb
             if (loggedIn)
             {
                 formLogin.Visible = false;
+                formSignUp.Visible = false;
                 formTransaction.Visible = true;
             }
 
@@ -54,11 +55,12 @@ namespace ATMWeb
                 lblLoginError.Text = loginErrorText.Trim();
                 formLoginError.Visible = true;
             }
+
+            loginErrorText = errorLabel;
         }
 
         protected void Login_Click(object sender, EventArgs e)
         {
-            loginErrorText = errorLabel;
             bool input_valid = true;
 
             if(string.IsNullOrWhiteSpace(firstNameText.Text)) {
@@ -75,6 +77,13 @@ namespace ATMWeb
             {
                 loginErrorText += "<br>" + "Please enter your PIN.";
                 input_valid = false;
+            } else {
+                try {
+                    Int32.Parse(PINText.Text);
+                } catch (FormatException) {
+                    loginErrorText += "<br>" + "Invalid PIN.";
+                    input_valid = false;
+                }
             }
 
             if(input_valid) {
@@ -93,7 +102,19 @@ namespace ATMWeb
                     loginErrorText += "<br>" + "Invalid name or PIN.";
                 }
             }
-        } 
+        }
+
+        protected void Signup_Click(object sender, EventArgs e)
+        {
+            formLogin.Visible = false;
+            formSignUp.Visible = true;
+            formTransaction.Visible = false;
+        }
+
+        protected void SignupSubmit_Click(object sender, EventArgs e)
+        {
+            
+        }
 
         static async Task<User> CheckLogin(string firstName, string lastName, int pin) {
             User user = null;

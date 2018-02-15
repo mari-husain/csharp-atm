@@ -7,6 +7,9 @@
             <div class="row" style="padding-top:20px">
                 <div class="col-md-8 col-md-offset-2">
                     <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Login
+                        </div>
                         <div class="panel-body">
                             <asp:Panel id="formLoginError" runat="server" Visible="false" CssClass="alert alert-danger">
                                 <asp:Label id="lblLoginError" runat="server" Text="Message"></asp:Label>
@@ -22,9 +25,46 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="PINText">PIN</label>
-                                    <asp:TextBox runat="server" CssClass="form-control" id="PINText" />
+                                    <asp:TextBox runat="server" CssClass="form-control" id="PINText" TextMode="Password" />
                                 </div>
-                                <asp:Button runat="server" CssClass="btn btn-default" id="Login" Text="Login" OnClick="Login_Click"></asp:Button>
+                                <asp:Button runat="server" CssClass="btn btn-default" Text="Login" OnClick="Login_Click"></asp:Button>
+                                <asp:Button runat="server" CssClass="btn btn-default" Text="Sign Up" OnClick="Signup_Click"></asp:Button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </asp:Panel>
+
+    <asp:Panel id="formSignUp" runat="server" Visible="false" CssClass="container">
+            <div class="row" style="padding-top:20px">
+                <div class="col-md-8 col-md-offset-2">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Sign Up
+                        </div>
+                        <div class="panel-body">
+                            <asp:Panel id="formSignupError" runat="server" Visible="false" CssClass="alert alert-danger">
+                                <asp:Label id="lblSignupError" runat="server" Text="Message"></asp:Label>
+                            </asp:Panel>
+                            <form>
+                                <div class="form-group">
+                                    <label for="firstNameSignupText">First Name</label>
+                                    <asp:TextBox runat="server" CssClass="form-control" id="firstNameSignupText" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="lastNameSignupText">Last Name</label>
+                                    <asp:TextBox runat="server" CssClass="form-control" id="lastNameSignupText" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="PINSignupText">PIN</label>
+                                    <asp:TextBox runat="server" CssClass="form-control" id="PINSignupText" TextMode="Password" />
+                                </div>
+                                <div class="form-group">
+                                    <label for="PINSignupConfirmText">Confirm PIN</label>
+                                    <asp:TextBox runat="server" CssClass="form-control" id="PINSignupConfirmText" TextMode="Password" />
+                                </div>
+                                <asp:Button runat="server" CssClass="btn btn-default" Text="Sign Up" OnClick="SignupSubmit_Click"></asp:Button>
                             </form>
                         </div>
                     </div>
