@@ -132,6 +132,8 @@ namespace ATMWeb
          * */
         protected void Signup_Click(object sender, EventArgs e)
         {
+            resetAllFields();
+
             formLogin.Visible = false;
             formSignUp.Visible = true;
             formTransaction.Visible = false;
@@ -217,10 +219,18 @@ namespace ATMWeb
 
         }
 
+        protected void SignupBack_Click(object sender, EventArgs e) {
+            resetAllFields();
+
+            formLogin.Visible = true;
+            formSignUp.Visible = false;
+            formTransaction.Visible = false;
+        }
+
         /* *
          * Sent a GET request to a server to authenticate the given user.
          * */
-        async Task<User> CheckLogin(string firstName, string lastName, int pin) {
+        private async Task<User> CheckLogin(string firstName, string lastName, int pin) {
             User user = null;
 
             HttpResponseMessage response = await client.GetAsync($"api/login?firstName={firstName}&lastName={lastName}&pin={pin}");
@@ -243,7 +253,7 @@ namespace ATMWeb
         /* *
          * Sent a POST request to a server to create the given user.
          * */
-        async Task<User> CreateNewUser(string firstName, string lastName, int pin)
+        private async Task<User> CreateNewUser(string firstName, string lastName, int pin)
         {
             User user = null;
 
@@ -278,6 +288,23 @@ namespace ATMWeb
 
             // return the newly created user.
             return user;
+        }
+
+        private void resetAllFields() {
+            firstNameText.Text = "";
+            lastNameText.Text = "";
+            PINText.Text = "";
+
+            loginErrorText = errorLabel;
+            formLoginError.Visible = false;
+
+            firstNameSignupText.Text = "";
+            lastNameSignupText.Text = "";
+            PINSignupText.Text = "";
+            PINSignupConfirmText.Text = "";
+
+            signupErrorText = errorLabel;
+            formSignupError.Visible = false;
         }
 
     }

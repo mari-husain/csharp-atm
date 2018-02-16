@@ -64,7 +64,8 @@
                                     <label for="PINSignupConfirmText">Confirm PIN</label>
                                     <asp:TextBox runat="server" CssClass="form-control" id="PINSignupConfirmText" TextMode="Password" />
                                 </div>
-                                <asp:Button runat="server" CssClass="btn btn-default" Text="Sign Up" OnClick="SignupSubmit_Click"></asp:Button>
+                                <asp:Button runat="server" CssClass="btn btn-default" Text="Back" OnClick="SignupBack_Click" />
+                                <asp:Button runat="server" CssClass="btn btn-default" Text="Sign Up" OnClick="SignupSubmit_Click" />
                             </form>
                         </div>
                     </div>
@@ -73,11 +74,22 @@
     </asp:Panel>
 
     <asp:Panel id="formTransaction" runat="server" Visible="false" CssClass="container">
-        <div class="row">
+        <div class="row" style="padding-top:20px">
             <div class="col-md-8 col-md-offset-2">
                 <div class="panel panel-default">
-                    <div class="panel-body">
-                        Transaction
+                    <div class="panel-heading">
+                        ATM Transaction
+                    </div>
+                    <div class="panel-body text-center">
+                        <div class="row" style="padding:5px">
+                            <asp:Button runat="server" CssClass="btn btn-lg btn-default" Width="200px" Text="Deposit" OnClick="SignupSubmit_Click" />
+                        </div>
+                        <div class="row" style="padding:5px">
+                            <asp:Button runat="server" CssClass="btn btn-lg btn-default" Width="200px" Text="Withdraw" OnClick="SignupSubmit_Click"/>
+                        </div>
+                        <div class="row" style="padding:5px">
+                            <asp:Button runat="server" CssClass="btn btn-lg btn-default" Width="200px" Text="Balance Inquiry" OnClick="SignupSubmit_Click"/>
+                        </div>
                     </div>
                 </div>
             </div>
