@@ -20,7 +20,7 @@ namespace ATMWeb
 
     public partial class Default : System.Web.UI.Page
     {
-        User loggedInUser = null;
+        User loggedInUser;
 
         private string errorLabel = "<b>Error</b>";
         private string loginErrorText;
@@ -29,7 +29,9 @@ namespace ATMWeb
 
         private static readonly HttpClient client = new HttpClient();
 
-        // Initialize the page
+        /* *
+         * Initialize the page.
+         * */
         public void Page_Load() {
             if (!IsPostBack)
             {
@@ -43,9 +45,11 @@ namespace ATMWeb
             signupErrorText = loginErrorText = errorLabel;
         }
 
-        // Called before the page is rendered.
-        // Makes last-minute changes to what is displayed on the page
-        // (i.e. what to show, what to hide)
+        /* *
+         * Called before the page is rendered.
+         * Makes last-minute changes to what is displayed on the page
+         * (i.e. what to show, what to hide) 
+         * */
         public void Page_PreRender() {
             if (loggedInUser != null)
             {
@@ -68,6 +72,10 @@ namespace ATMWeb
             signupErrorText = loginErrorText = errorLabel;
         }
 
+        /* *
+         * Called when the user clicks the "login" button in the login panel.
+         * Initiates the user validation process.
+         * */
         protected void Login_Click(object sender, EventArgs e)
         {
             bool input_valid = true;
@@ -76,6 +84,7 @@ namespace ATMWeb
             string lastName;
             int pin;
 
+            // field validation
             if(string.IsNullOrWhiteSpace(firstName = firstNameText.Text)) {
                 loginErrorText += "<br>" + "Please enter your first name.";
                 input_valid = false;
@@ -94,16 +103,19 @@ namespace ATMWeb
                 try {
                     pin = Int32.Parse(PINText.Text);
 
+                    // if all fields are valid, initiate the user authentication process
                     if (input_valid)
                     {
                         var user = CheckLogin(firstName, lastName, pin).GetAwaiter().GetResult();
 
                         if (user != null)
                         {
+                            // if the user successfully logged in, save their login info.
                             loggedInUser = user;
                         }
                         else
                         {
+                            // otherwise inform them that they failed authentication.
                             loginErrorText += "<br>" + "Invalid name or PIN.";
                         }
                     }
@@ -114,7 +126,10 @@ namespace ATMWeb
             }
         }
 
-        // Display the signup form.
+        /* *
+         * Called when the user clicks the "sign up" button from the login form.
+         * Display the signup form.
+         * */
         protected void Signup_Click(object sender, EventArgs e)
         {
             formLogin.Visible = false;
@@ -122,14 +137,19 @@ namespace ATMWeb
             formTransaction.Visible = false;
         }
 
+        /* *
+         * Called when the user clicks the "sign up" button from the signup form.
+         * Initiates the user creation process.
+         * */
         protected void SignupSubmit_Click(object sender, EventArgs e)
         {
-            bool input_valid = true;
             string firstName;
             string lastName;
             int pin;
             int pinConfirmation;
+            bool input_valid = true;
 
+            // validate user input
             if (string.IsNullOrWhiteSpace(firstName = firstNameSignupText.Text))
             {
                 signupErrorText += "<br/>" + "Please enter your first name.";
@@ -170,10 +190,12 @@ namespace ATMWeb
                             } else {
                                 if (input_valid)
                                 {
+                                    // if user input is valid, post the new user to the server.
                                     var user = CreateNewUser(firstName, lastName, pin).GetAwaiter().GetResult();
 
                                     if (user != null)
                                     {
+                                        // if the user was successfully created, log them in and save their login info.
                                         loggedInUser = user;
                                     }
                                 }
@@ -195,6 +217,9 @@ namespace ATMWeb
 
         }
 
+        /* *
+         * Sent a GET request to a server to authenticate the given user.
+         * */
         async Task<User> CheckLogin(string firstName, string lastName, int pin) {
             User user = null;
 
@@ -215,6 +240,9 @@ namespace ATMWeb
             return user;
         }
 
+        /* *
+         * Sent a POST request to a server to create the given user.
+         * */
         async Task<User> CreateNewUser(string firstName, string lastName, int pin)
         {
             User user = null;
