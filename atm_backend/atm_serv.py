@@ -67,7 +67,7 @@ def bad_request(error):
 	return make_response(jsonify({'error': 'Bad request'}), 400)
 
 def name_in_use():
-	return make_response(jsonify({'error': 'An account with this email already exists'}), 409)
+	return make_response(jsonify({'error': 'An account with this name already exists'}), 409)
 
 
 ##

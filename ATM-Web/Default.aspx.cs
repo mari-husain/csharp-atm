@@ -6,6 +6,7 @@ using System.Web.Script.Serialization;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using System.Text;
 using Newtonsoft.Json.Linq;
 
 namespace ATMWeb
@@ -19,9 +20,11 @@ namespace ATMWeb
 
     public partial class Default : System.Web.UI.Page
     {
-        private bool loggedIn = false;
+        User loggedInUser = null;
+
         private string errorLabel = "<b>Error</b>";
         private string loginErrorText;
+        private string signupErrorText;
 
 
         private static readonly HttpClient client = new HttpClient();
@@ -37,14 +40,14 @@ namespace ATMWeb
                     new MediaTypeWithQualityHeaderValue("application/json"));
             }
 
-            loginErrorText = errorLabel;
+            signupErrorText = loginErrorText = errorLabel;
         }
 
         // Called before the page is rendered.
         // Makes last-minute changes to what is displayed on the page
         // (i.e. what to show, what to hide)
         public void Page_PreRender() {
-            if (loggedIn)
+            if (loggedInUser != null)
             {
                 formLogin.Visible = false;
                 formSignUp.Visible = false;
@@ -56,19 +59,29 @@ namespace ATMWeb
                 formLoginError.Visible = true;
             }
 
-            loginErrorText = errorLabel;
+            if (signupErrorText != errorLabel)
+            {
+                lblSignupError.Text = signupErrorText.Trim();
+                formSignupError.Visible = true;
+            }
+
+            signupErrorText = loginErrorText = errorLabel;
         }
 
         protected void Login_Click(object sender, EventArgs e)
         {
             bool input_valid = true;
 
-            if(string.IsNullOrWhiteSpace(firstNameText.Text)) {
+            string firstName;
+            string lastName;
+            int pin;
+
+            if(string.IsNullOrWhiteSpace(firstName = firstNameText.Text)) {
                 loginErrorText += "<br>" + "Please enter your first name.";
                 input_valid = false;
             }
                
-            if(string.IsNullOrWhiteSpace(lastNameText.Text)) {
+            if(string.IsNullOrWhiteSpace(lastName = lastNameText.Text)) {
                 loginErrorText += "<br>" + "Please enter your last name.";
                 input_valid = false;
             }
@@ -79,31 +92,29 @@ namespace ATMWeb
                 input_valid = false;
             } else {
                 try {
-                    Int32.Parse(PINText.Text);
+                    pin = Int32.Parse(PINText.Text);
+
+                    if (input_valid)
+                    {
+                        var user = CheckLogin(firstName, lastName, pin).GetAwaiter().GetResult();
+
+                        if (user != null)
+                        {
+                            loggedInUser = user;
+                        }
+                        else
+                        {
+                            loginErrorText += "<br>" + "Invalid name or PIN.";
+                        }
+                    }
                 } catch (FormatException) {
                     loginErrorText += "<br>" + "Invalid PIN.";
                     input_valid = false;
                 }
             }
-
-            if(input_valid) {
-                string firstName = firstNameText.Text;
-                string lastName = lastNameText.Text;
-                int pin = Int32.Parse(PINText.Text);
-
-                var user = CheckLogin(firstName, lastName, pin).GetAwaiter().GetResult();
-
-                if (user != null)
-                {
-                    loggedIn = true;
-                }
-                else
-                {
-                    loginErrorText += "<br>" + "Invalid name or PIN.";
-                }
-            }
         }
 
+        // Display the signup form.
         protected void Signup_Click(object sender, EventArgs e)
         {
             formLogin.Visible = false;
@@ -113,10 +124,78 @@ namespace ATMWeb
 
         protected void SignupSubmit_Click(object sender, EventArgs e)
         {
-            
+            bool input_valid = true;
+            string firstName;
+            string lastName;
+            int pin;
+            int pinConfirmation;
+
+            if (string.IsNullOrWhiteSpace(firstName = firstNameSignupText.Text))
+            {
+                signupErrorText += "<br/>" + "Please enter your first name.";
+                input_valid = false;
+            }
+
+            if (string.IsNullOrWhiteSpace(lastName = lastNameSignupText.Text))
+            {
+                signupErrorText += "<br/>" + "Please enter your last name.";
+                input_valid = false;
+            }
+
+            if (string.IsNullOrWhiteSpace(PINSignupText.Text))
+            {
+                signupErrorText += "<br/>" + "Please enter a PIN.";
+                input_valid = false;
+            }
+            else
+            {
+                try
+                {
+                    pin = Int32.Parse(PINSignupText.Text);
+
+                    if (string.IsNullOrWhiteSpace(PINSignupConfirmText.Text))
+                    {
+                        signupErrorText += "<br/>" + "Please confirm your PIN.";
+                        input_valid = false;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            pinConfirmation = Int32.Parse(PINSignupConfirmText.Text);
+
+                            if(pin != pinConfirmation) {
+                                signupErrorText += "<br/>" + "PINs do not match.";
+                                input_valid = false;
+                            } else {
+                                if (input_valid)
+                                {
+                                    var user = CreateNewUser(firstName, lastName, pin).GetAwaiter().GetResult();
+
+                                    if (user != null)
+                                    {
+                                        loggedInUser = user;
+                                    }
+                                }
+                            }
+                        }
+                        catch (FormatException)
+                        {
+                            signupErrorText += "<br/>" + "Invalid PIN confirmation.";
+                            input_valid = false;
+                        }
+                    }
+                }
+                catch (FormatException)
+                {
+                    signupErrorText += "<br/>" + "Invalid PIN.";
+                    input_valid = false;
+                }
+            }
+
         }
 
-        static async Task<User> CheckLogin(string firstName, string lastName, int pin) {
+        async Task<User> CheckLogin(string firstName, string lastName, int pin) {
             User user = null;
 
             HttpResponseMessage response = await client.GetAsync($"api/login?firstName={firstName}&lastName={lastName}&pin={pin}");
@@ -136,6 +215,42 @@ namespace ATMWeb
             return user;
         }
 
+        async Task<User> CreateNewUser(string firstName, string lastName, int pin)
+        {
+            User user = null;
+
+            // create a JSON representing the user.
+            string userRequest = "{\"FirstName\":\"" + firstName + "\"," 
+                                + "\"LastName\":\"" + lastName + "\","
+                                + "\"Balance\":\"" + 0.0 + "\"," 
+                                + "\"PIN\":\"" + pin + "\"}";
+
+            // convert the JSON string to httpContent so we can send it using HttpResponseMessage
+            var httpContent = new StringContent(userRequest, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await client.PostAsync($"api/account", httpContent);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // get data as a JSON string
+                string data = await response.Content.ReadAsStringAsync();
+
+                //use JavaScriptSerializer from System.Web.Script.Serialization
+                JavaScriptSerializer JSserializer = new JavaScriptSerializer();
+
+                // deserialize response to User class
+                user = JSserializer.Deserialize<User>(data);
+
+            } else {
+                // if the username is already in use, the server will return a 409 error.
+                if(response.StatusCode == HttpStatusCode.Conflict) {
+                    signupErrorText += "<br>" + "User already exists. Please login.";
+                }
+            }
+
+            // return the newly created user.
+            return user;
+        }
 
     }
 }
