@@ -42,5 +42,17 @@ namespace ATMWeb {
 		protected System.Web.UI.WebControls.TextBox PINSignupConfirmText;
 		
 		protected System.Web.UI.WebControls.Panel formTransaction;
+		
+		protected System.Web.UI.WebControls.Panel formDeposit;
+		
+		protected System.Web.UI.WebControls.TextBox amountDepositText;
+		
+		protected System.Web.UI.WebControls.Panel formWithdraw;
+		
+		protected System.Web.UI.WebControls.Panel formInquiry;
+		
+		protected System.Web.UI.WebControls.Label balanceLbl;
+
+        protected System.Web.UI.WebControls.TextBox amountWithdrawText;
 	}
 }

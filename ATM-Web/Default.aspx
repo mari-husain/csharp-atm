@@ -82,19 +82,94 @@
                     </div>
                     <div class="panel-body text-center">
                         <div class="row" style="padding:5px">
-                            <asp:Button runat="server" CssClass="btn btn-lg btn-default" Width="200px" Text="Deposit" OnClick="SignupSubmit_Click" />
+                            <asp:Button runat="server" CssClass="btn btn-lg btn-default" Width="200px" Text="Deposit" OnClick="InitDeposit_Click" />
                         </div>
                         <div class="row" style="padding:5px">
-                            <asp:Button runat="server" CssClass="btn btn-lg btn-default" Width="200px" Text="Withdraw" OnClick="SignupSubmit_Click"/>
+                            <asp:Button runat="server" CssClass="btn btn-lg btn-default" Width="200px" Text="Withdraw" OnClick="InitWithdraw_Click"/>
                         </div>
                         <div class="row" style="padding:5px">
-                            <asp:Button runat="server" CssClass="btn btn-lg btn-default" Width="200px" Text="Balance Inquiry" OnClick="SignupSubmit_Click"/>
+                            <asp:Button runat="server" CssClass="btn btn-lg btn-default" Width="200px" Text="Balance Inquiry" OnClick="InitInquiry_Click"/>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </asp:Panel>
+    
+    <asp:Panel id="formDeposit" runat="server" Visible="false" CssClass="container">
+        <div class="row" style="padding-top:20px">
+            <div class="col-md-8 col-md-offset-2">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        Deposit
+                    </div>
+                    <div class="panel-body text-center">
+                        <form>
+                            <div class="form-group">
+                                <label for="amountDepositText">Amount to Deposit</label>
+                                <asp:TextBox runat="server" CssClass="form-control" id="amountDepositText" />
+                            </div>
+                            
+                            <asp:Button runat="server" CssClass="btn btn-default" Text="Deposit" OnClick="Deposit_Click" />
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </asp:Panel>
+
+    <asp:Panel id="formWithdraw" runat="server" Visible="false" CssClass="container">
+        <div class="row" style="padding-top:20px">
+            <div class="col-md-8 col-md-offset-2">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        Withdraw
+                    </div>
+                    <div class="panel-body">
+                        <div class="container-fluid text-center">
+                            <div class="col-md-4 col-md-offset-4">
+                                <div class="row" style="padding-bottom:5px">
+                                    <div class="input-group">
+                                        <span class="input-group-btn">
+                                            <asp:Button runat="server" CssClass="btn btn-default" Text="-" OnClick="Withdraw_Decr" />
+                                        </span>
+                                        <asp:Textbox runat="server" CssClass="form-control" id="amountWithdrawText" Enabled="false" Text = "20" />
+                                        <span class="input-group-btn">
+                                            <asp:Button runat="server" CssClass="btn btn-default" Text="+" OnClick="Withdraw_Incr" />
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <asp:Button runat="server" CssClass="btn btn-default" Text="Withdraw" OnClick="Withdraw_Click" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </asp:Panel>
+   
+    <asp:Panel id="formInquiry" runat="server" Visible="false" CssClass="container">
+        <div class="row" style="padding-top:20px">
+            <div class="col-md-8 col-md-offset-2">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        Balance Inquiry
+                    </div>
+                    <div class="panel-body text-center">
+                        <div class="row">
+                            <label for="balanceLbl">Balance</label>
+                        </div>
+                        <div class="row">
+                            <asp:Label runat="server" id="balanceLbl" Text="Balance" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </asp:Panel>
+    
 </asp:Content>
 
 

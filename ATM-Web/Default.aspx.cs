@@ -227,6 +227,56 @@ namespace ATMWeb
             formTransaction.Visible = false;
         }
 
+        protected void InitDeposit_Click(object sender, EventArgs e) {
+            formTransaction.Visible = false;
+            formDeposit.Visible = true;
+        }
+
+        protected void Deposit_Click(object sender, EventArgs e)
+        {
+            
+        }
+
+        protected void InitWithdraw_Click(object sender, EventArgs e)
+        {
+            formTransaction.Visible = false;
+            formWithdraw.Visible = true;
+        }
+
+        protected void Withdraw_Decr(object sender, EventArgs e)
+        {
+            int amountWithdraw = Int32.Parse(amountWithdrawText.Text);
+
+            if (amountWithdraw > 0)
+            {
+                amountWithdrawText.Text = "" + (amountWithdraw - 20);
+            }
+        }
+
+        protected void Withdraw_Incr(object sender, EventArgs e)
+        {
+            int amountWithdraw = Int32.Parse(amountWithdrawText.Text);
+            if(amountWithdraw < 10000) {
+                amountWithdrawText.Text = "" + (amountWithdraw + 20);
+            }
+        }
+
+        protected void Withdraw_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        protected void InitInquiry_Click(object sender, EventArgs e)
+        {
+            formTransaction.Visible = false;
+            formInquiry.Visible = true;
+        }
+
+        protected void Inquiry_Click(object sender, EventArgs e)
+        {
+
+        }
+
         /* *
          * Sent a GET request to a server to authenticate the given user.
          * */
