@@ -7,25 +7,38 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Text;
-using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace ATMWeb
 {
 
+    [Serializable]
     public class User {
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public string Balance { get; set; }
+        public double Balance { get; set; }
+        public int PIN { get; set; }
+
+        public User() {
+            FirstName = "John";
+            LastName = "Doe";
+            Balance = 1000;
+        }
+
+        public User(string _firstName, string _lastName, double _balance) {
+            FirstName = _firstName;
+            LastName = _lastName;
+            Balance = _balance;
+        }
     }
 
     public partial class Default : System.Web.UI.Page
     {
-        User loggedInUser;
-
         private string errorLabel = "<b>Error</b>";
         private string loginErrorText;
         private string signupErrorText;
-
+        private string depositErrorText;
+        private string withdrawErrorText;
 
         private static readonly HttpClient client = new HttpClient();
 
@@ -40,9 +53,14 @@ namespace ATMWeb
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(
                     new MediaTypeWithQualityHeaderValue("application/json"));
+
+                if(Request.Cookies["atm_bills"] == null){
+                    Response.Cookies["atm_bills"].Value = "500";
+                    Response.Cookies["atm_bills"].Expires = DateTime.Now.AddDays(1);
+                }
             }
 
-            signupErrorText = loginErrorText = errorLabel;
+            withdrawErrorText = depositErrorText = signupErrorText = loginErrorText = errorLabel;
         }
 
         /* *
@@ -51,7 +69,8 @@ namespace ATMWeb
          * (i.e. what to show, what to hide) 
          * */
         public void Page_PreRender() {
-            if (loggedInUser != null)
+
+            if (Session["loggedInUser"] != null && formLogin.Visible)
             {
                 formLogin.Visible = false;
                 formSignUp.Visible = false;
@@ -69,7 +88,18 @@ namespace ATMWeb
                 formSignupError.Visible = true;
             }
 
-            signupErrorText = loginErrorText = errorLabel;
+            if (depositErrorText != errorLabel) {
+                lblDepositError.Text = depositErrorText.Trim();
+                formDepositError.Visible = true;
+            }
+
+            if (withdrawErrorText != errorLabel)
+            {
+                lblWithdrawError.Text = withdrawErrorText.Trim();
+                formWithdrawError.Visible = true;
+            }
+
+            withdrawErrorText = depositErrorText = signupErrorText = loginErrorText = errorLabel;
         }
 
         /* *
@@ -78,6 +108,8 @@ namespace ATMWeb
          * */
         protected void Login_Click(object sender, EventArgs e)
         {
+            clearAlerts();
+
             bool input_valid = true;
 
             string firstName;
@@ -111,7 +143,8 @@ namespace ATMWeb
                         if (user != null)
                         {
                             // if the user successfully logged in, save their login info.
-                            loggedInUser = user;
+                            user.PIN = pin;
+                            Session["loggedInUser"] = user;
                         }
                         else
                         {
@@ -145,6 +178,8 @@ namespace ATMWeb
          * */
         protected void SignupSubmit_Click(object sender, EventArgs e)
         {
+            clearAlerts();
+
             string firstName;
             string lastName;
             int pin;
@@ -198,7 +233,8 @@ namespace ATMWeb
                                     if (user != null)
                                     {
                                         // if the user was successfully created, log them in and save their login info.
-                                        loggedInUser = user;
+                                        user.PIN = pin;
+                                        Session["loggedInUser"] = user;
                                     }
                                 }
                             }
@@ -219,12 +255,15 @@ namespace ATMWeb
 
         }
 
-        protected void SignupBack_Click(object sender, EventArgs e) {
+        protected void ToHome_Click(object sender, EventArgs e) {
             resetAllFields();
 
             formLogin.Visible = true;
             formSignUp.Visible = false;
             formTransaction.Visible = false;
+            formDeposit.Visible = false;
+            formWithdraw.Visible = false;
+            formInquiry.Visible = false;
         }
 
         protected void InitDeposit_Click(object sender, EventArgs e) {
@@ -234,7 +273,22 @@ namespace ATMWeb
 
         protected void Deposit_Click(object sender, EventArgs e)
         {
-            
+            clearAlerts();
+
+            int depositAmt;
+
+            if(Int32.TryParse(amountDepositText.Text, out depositAmt)) {
+
+                // update the user to their new balance amount
+                ((User)Session["loggedInUser"]).Balance += depositAmt;
+
+                // POST the updated user balance to the server
+                UpdateUser((User)Session["loggedInUser"]).GetAwaiter();
+
+                formDepositSuccess.Visible = true;
+            } else {
+                depositErrorText += "<br />" + "Invalid amount.";
+            }
         }
 
         protected void InitWithdraw_Click(object sender, EventArgs e)
@@ -247,7 +301,7 @@ namespace ATMWeb
         {
             int amountWithdraw = Int32.Parse(amountWithdrawText.Text);
 
-            if (amountWithdraw > 0)
+            if (amountWithdraw > 20)
             {
                 amountWithdrawText.Text = "" + (amountWithdraw - 20);
             }
@@ -256,25 +310,56 @@ namespace ATMWeb
         protected void Withdraw_Incr(object sender, EventArgs e)
         {
             int amountWithdraw = Int32.Parse(amountWithdrawText.Text);
-            if(amountWithdraw < 10000) {
+            int atmBills = Int32.Parse(Request.Cookies["atm_bills"].Value);
+
+            if(amountWithdraw / 20 < atmBills) {
                 amountWithdrawText.Text = "" + (amountWithdraw + 20);
             }
         }
 
         protected void Withdraw_Click(object sender, EventArgs e)
         {
+            clearAlerts();
 
+            int withdrawalAmt = Int32.Parse(amountWithdrawText.Text);
+
+            // check that the user has sufficient funds to withdraw from.
+            if(((User)Session["loggedInUser"]).Balance >= withdrawalAmt) {
+
+                // check that the AMT has sufficient bills to dispense.
+                if(Int32.Parse(Request.Cookies["atm_bills"].Value) / 20 > withdrawalAmt / 20 ) {
+
+                    // update the user to their new balance amount
+                    ((User)Session["loggedInUser"]).Balance -= withdrawalAmt;
+
+                    // POST the updated user balance to the server.
+                    UpdateUser((User)Session["loggedInUser"]).GetAwaiter();
+
+                    // update the number of bills remaining in the ATM according to how many we dispensed.
+                    HttpCookie cookie = new HttpCookie("atm_bills");
+                    cookie.Value = "" + (Int32.Parse(Request.Cookies["atm_bills"].Value) - withdrawalAmt / 20);
+                    cookie.Expires = Request.Cookies["atm_bills"].Expires;
+
+                    Response.Cookies.Add(cookie);
+
+                    // display success message.
+                    formWithdrawSuccess.Visible = true;
+                } else {
+                    withdrawErrorText += "<br />" + "ATM does not have enough bills.";
+                }
+            } else {
+                withdrawErrorText += "<br />" + "Insufficent funds.";
+            }
         }
 
         protected void InitInquiry_Click(object sender, EventArgs e)
         {
             formTransaction.Visible = false;
             formInquiry.Visible = true;
-        }
 
-        protected void Inquiry_Click(object sender, EventArgs e)
-        {
+            User loggedInUser = (User)Session["loggedInUser"];
 
+            balanceLbl.Text = "" + loggedInUser.Balance;
         }
 
         /* *
@@ -290,11 +375,8 @@ namespace ATMWeb
                 // get data as a JSON string
                 string data = await response.Content.ReadAsStringAsync();
 
-                //use JavaScriptSerializer from System.Web.Script.Serialization
-                JavaScriptSerializer JSserializer = new JavaScriptSerializer();
-
                 // deserialize response to User class
-                user = JSserializer.Deserialize<User>(data);
+                user = JsonConvert.DeserializeObject<User>(data);
             }
 
             return user;
@@ -340,6 +422,23 @@ namespace ATMWeb
             return user;
         }
 
+        /* *
+         * Sent a POST request to a server to create the given user.
+         * */
+        private async Task UpdateUser(User user)
+        {
+            // create a JSON representing the user.
+            string userRequest = "{\"FirstName\":\"" + user.FirstName + "\","
+                                + "\"LastName\":\"" + user.LastName + "\","
+                                + "\"Balance\":\"" + user.Balance + "\","
+                                + "\"PIN\":\"" + user.PIN + "\"}";
+
+            // convert the JSON string to httpContent so we can send it using HttpResponseMessage
+            var httpContent = new StringContent(userRequest, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await client.PostAsync($"api/update", httpContent);
+        }
+
         private void resetAllFields() {
             firstNameText.Text = "";
             lastNameText.Text = "";
@@ -355,6 +454,31 @@ namespace ATMWeb
 
             signupErrorText = errorLabel;
             formSignupError.Visible = false;
+
+            amountDepositText.Text = "";
+            depositErrorText = errorLabel;
+            formDepositError.Visible = false;
+            formDepositSuccess.Visible = false;
+
+            amountWithdrawText.Text = "20";
+            withdrawErrorText = errorLabel;
+            formWithdrawError.Visible = false;
+            formWithdrawSuccess.Visible = false;
+        }
+
+        private void clearAlerts() {
+            loginErrorText = errorLabel;
+            formLoginError.Visible = false;
+
+            signupErrorText = errorLabel;
+            formSignupError.Visible = false;
+
+            depositErrorText = errorLabel;
+            formDepositError.Visible = false;
+            formDepositSuccess.Visible = false;
+
+            withdrawErrorText = errorLabel;
+            formWithdrawError.Visible = false;
         }
 
     }

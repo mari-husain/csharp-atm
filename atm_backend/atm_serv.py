@@ -93,7 +93,7 @@ def index():
 # API: Get all users
 @app.route("/api/accounts", methods = ['GET'])
 def accounts():
-	return jsonify({'accounts': query_db('SELECT * FROM ACCOUNTS')})
+	return jsonify(query_db('SELECT * FROM ACCOUNTS'))
 
 # API: Add a new user
 @app.route("/api/account", methods = ['POST'])
@@ -113,20 +113,7 @@ def create_account():
 	if account is None:
 		abort(400)
 
-	return jsonify({'account': account}), 201
-
-# API: Get a single user's data
-@app.route("/api/account", methods = ['GET'])
-def get_account():
-	firstName = request.args.get('firstName')
-	lastName = request.args.get('lastName')
-
-	account = query_db('SELECT FirstName, LastName, Balance FROM Accounts WHERE FirstName = ? AND LastName = ?', [firstName, lastName], one=True)
-
-	if account is None:
-		abort(404)
-	else:
-		return jsonify({'account': account})
+	return jsonify(account), 201
 
 # API: Login, get a single user's data
 @app.route("/api/login", methods = ['GET'])
@@ -140,10 +127,31 @@ def check_login():
 	if account is None:
 		abort(404)
 	else:
-		return jsonify({'account': account})
+		return jsonify(account)
+
+@app.route("/api/update", methods = ['POST'])
+def update():
+
+	if not request.json or not 'FirstName' in request.json or not 'LastName' in request.json or not 'Balance' in request.json or not 'PIN' in request.json:
+		abort(400)
+
+	# first, authenticate this user
+	firstName = request.json['FirstName']
+	lastName = request.json['LastName']
+	balance = request.json['Balance']
+	pin = request.json['PIN']
+
+	account = query_db('SELECT FirstName, LastName, Balance FROM Accounts WHERE FirstName = ? AND LastName = ? AND PIN = ?', [firstName, lastName, pin], one=True)
+
+	if account is None:
+		abort(404)
+	else:
+		account = query_db('UPDATE Accounts SET Balance = ? WHERE FirstName = ? AND LastName = ? AND PIN = ?', [balance, firstName, lastName, pin], one=True)
+
+	return jsonify({}), 200
 
 # API: Delete a user by email
-@app.route("/api/account", methods = ['DELETE'])
+@app.route("/api/delete", methods = ['DELETE'])
 def delete_account():
 	firstName = request.args.get('firstName')
 	lastName = request.args.get('lastName')
@@ -153,7 +161,7 @@ def delete_account():
 		abort(404)
 	else:
 		query_db('DELETE FROM Accounts WHERE FirstName = ? AND LastName = ?', [firstName, lastName])
-		return jsonify({'account': account})
+		return jsonify(account)
 
 if __name__ == "__main__":
 	app.run(host='0.0.0.0', port=5000)		

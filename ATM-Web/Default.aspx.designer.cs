@@ -54,5 +54,17 @@ namespace ATMWeb {
 		protected System.Web.UI.WebControls.Label balanceLbl;
 
         protected System.Web.UI.WebControls.TextBox amountWithdrawText;
+
+        protected System.Web.UI.WebControls.Panel formDepositError;
+
+        protected System.Web.UI.WebControls.Label lblDepositError;
+
+        protected System.Web.UI.WebControls.Panel formWithdrawError;
+
+        protected System.Web.UI.WebControls.Label lblWithdrawError;
+
+        protected System.Web.UI.WebControls.Panel formDepositSuccess;
+
+        protected System.Web.UI.WebControls.Panel formWithdrawSuccess;
 	}
 }

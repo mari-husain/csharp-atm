@@ -64,7 +64,7 @@
                                     <label for="PINSignupConfirmText">Confirm PIN</label>
                                     <asp:TextBox runat="server" CssClass="form-control" id="PINSignupConfirmText" TextMode="Password" />
                                 </div>
-                                <asp:Button runat="server" CssClass="btn btn-default" Text="Back" OnClick="SignupBack_Click" />
+                                <asp:Button runat="server" CssClass="btn btn-default" Text="Back" OnClick="ToHome_Click" />
                                 <asp:Button runat="server" CssClass="btn btn-default" Text="Sign Up" OnClick="SignupSubmit_Click" />
                             </form>
                         </div>
@@ -104,12 +104,19 @@
                         Deposit
                     </div>
                     <div class="panel-body text-center">
+                        <asp:Panel id="formDepositError" runat="server" Visible="false" CssClass="alert alert-danger">
+                            <asp:Label id="lblDepositError" runat="server" Text="Message"></asp:Label>
+                        </asp:Panel>
+                        <asp:Panel id="formDepositSuccess" runat="server" Visible="false" CssClass="alert alert-success">
+                            <asp:Label id="lblDepositSuccess" runat="server" Text="Deposit successful."></asp:Label>
+                        </asp:Panel>
                         <form>
                             <div class="form-group">
                                 <label for="amountDepositText">Amount to Deposit</label>
                                 <asp:TextBox runat="server" CssClass="form-control" id="amountDepositText" />
                             </div>
                             
+                            <asp:Button runat="server" CssClass="btn btn-default" Text="Back" OnClick="ToHome_Click" />
                             <asp:Button runat="server" CssClass="btn btn-default" Text="Deposit" OnClick="Deposit_Click" />
                         </form>
                     </div>
@@ -126,6 +133,12 @@
                         Withdraw
                     </div>
                     <div class="panel-body">
+                        <asp:Panel id="formWithdrawError" runat="server" Visible="false" CssClass="alert alert-danger">
+                            <asp:Label id="lblWithdrawError" runat="server" Text="Message"></asp:Label>
+                        </asp:Panel>
+                        <asp:Panel id="formWithdrawSuccess" runat="server" Visible="false" CssClass="alert alert-success">
+                            <asp:Label id="lblWithdrawSuccess" runat="server" Text="Withdrawal successful."></asp:Label>
+                        </asp:Panel>
                         <div class="container-fluid text-center">
                             <div class="col-md-4 col-md-offset-4">
                                 <div class="row" style="padding-bottom:5px">
@@ -140,6 +153,7 @@
                                     </div>
                                 </div>
                                 <div class="row">
+                                    <asp:Button runat="server" CssClass="btn btn-default" Text="Back" OnClick="ToHome_Click" />
                                     <asp:Button runat="server" CssClass="btn btn-default" Text="Withdraw" OnClick="Withdraw_Click" />
                                 </div>
                             </div>
@@ -163,6 +177,9 @@
                         </div>
                         <div class="row">
                             <asp:Label runat="server" id="balanceLbl" Text="Balance" />
+                        </div>
+                        <div class="row">
+                            <asp:Button runat="server" CssClass="btn btn-default" Text="Back" OnClick="ToHome_Click" />
                         </div>
                     </div>
                 </div>
