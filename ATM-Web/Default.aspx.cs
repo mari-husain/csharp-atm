@@ -11,6 +11,9 @@ using Newtonsoft.Json;
 
 namespace ATMWeb
 {
+    // TODO: Add encryption
+    // TODO: Manage/display ATM's bill count
+    // TODO: Consolidate error messages
 
     [Serializable]
     public class User {
