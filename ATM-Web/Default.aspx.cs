@@ -8,11 +8,12 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Text;
 using Newtonsoft.Json;
+using System.Web.UI.WebControls;
 
 namespace ATMWeb
 {
     // TODO: Add encryption
-    // TODO: Manage/display ATM's bill count
+    // TODO: Code refactor
     // TODO: Consolidate error messages
 
     [Serializable]
@@ -43,25 +44,40 @@ namespace ATMWeb
         private string depositErrorText;
         private string withdrawErrorText;
 
+        private int[] atmBills;
+
         private static readonly HttpClient client = new HttpClient();
 
         /* *
          * Initialize the page.
          * */
         public void Page_Load() {
+
             if (!IsPostBack)
             {
                 // tell the client where to look for its data
                 client.BaseAddress = new Uri("http://localhost:5000/");
                 client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(
-                    new MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                if(Request.Cookies["atm_bills"] == null){
-                    Response.Cookies["atm_bills"].Value = "500";
-                    Response.Cookies["atm_bills"].Expires = DateTime.Now.AddDays(1);
+                if(atmBills == null) {
+                    atmBills = new int[] { 0, 0, 0, 0, 0, 0, 0, 500, 0 };
                 }
-            }
+
+                /* if(Request.Cookies["atm_bills"] == null || Request.Cookies["atm_bills"].Expires < DateTime.Now){
+
+                    HttpCookie cookie = new HttpCookie("atm_bills");
+                    cookie.Value = "0,0,0,0,0,0,0,500,0";
+                    cookie.Expires = DateTime.Now.AddDays(1.0);
+                    HttpContext.Current.Response.SetCookie(cookie);
+
+                    atm_bills = new int[] { 0, 0, 0, 0, 0, 0, 0, 500, 0 }; 
+
+                } */
+            } 
+
+            lblATMBalance.Text = "ATM Balance: " + "$0.01 - " + atmBills[0] + " | $0.05 - " + atmBills[1] + " | 0.10 - " + atmBills[2] + " | 0.25 - " + atmBills[3] 
+                + " | $1 - " + atmBills[4] + " | $5 - " + atmBills[5] + " | $10 - " + atmBills[6] + " | $20 - " + atmBills[7] + " | $50 - " + atmBills[8];
 
             withdrawErrorText = depositErrorText = signupErrorText = loginErrorText = errorLabel;
         }
@@ -278,19 +294,63 @@ namespace ATMWeb
         {
             clearAlerts();
 
-            int depositAmt;
+            Button btn = (Button)sender;
+            string id = btn.ID;
 
-            if(Int32.TryParse(amountDepositText.Text, out depositAmt)) {
+            double depositAmt = 0;
 
+            // update the amount of bills the ATM contains
+            switch(id) {
+                case "btn_01":
+                    depositAmt = 0.01;
+                    atmBills[0]++;
+                    break;
+                case "btn_05":
+                    depositAmt = 0.05;
+                    atmBills[1]++;
+                    break;
+                case "btn_010":
+                    depositAmt = 0.10;
+                    atmBills[2]++;
+                    break;
+                case "btn_025":
+                    depositAmt = 0.25;
+                    atmBills[3]++;
+                    break;
+                case "btn_1":
+                    depositAmt = 1;
+                    atmBills[4]++;
+                    break;
+                case "btn_5":
+                    depositAmt = 5;
+                    atmBills[5]++;
+                    break;
+                case "btn_10":
+                    depositAmt = 10;
+                    atmBills[6]++;
+                    break;
+                case "btn_20":
+                    depositAmt = 20;
+                    atmBills[7]++;
+                    break;
+                case "btn_50":
+                    depositAmt = 50;
+                    atmBills[8]++;
+                    break;
+                default:
+                    break;
+            }
+
+            if(depositAmt.CompareTo(0) != 0) {
+                
                 // update the user to their new balance amount
                 ((User)Session["loggedInUser"]).Balance += depositAmt;
 
                 // POST the updated user balance to the server
                 UpdateUser((User)Session["loggedInUser"]).GetAwaiter();
 
+                // display success message
                 formDepositSuccess.Visible = true;
-            } else {
-                depositErrorText += "<br />" + "Invalid amount.";
             }
         }
 
@@ -313,9 +373,9 @@ namespace ATMWeb
         protected void Withdraw_Incr(object sender, EventArgs e)
         {
             int amountWithdraw = Int32.Parse(amountWithdrawText.Text);
-            int atmBills = Int32.Parse(Request.Cookies["atm_bills"].Value);
+            int atm20Bills = atmBills[7];
 
-            if(amountWithdraw / 20 < atmBills) {
+            if(amountWithdraw / 20 < atm20Bills) {
                 amountWithdrawText.Text = "" + (amountWithdraw + 20);
             }
         }
@@ -329,8 +389,9 @@ namespace ATMWeb
             // check that the user has sufficient funds to withdraw from.
             if(((User)Session["loggedInUser"]).Balance >= withdrawalAmt) {
 
-                // check that the AMT has sufficient bills to dispense.
-                if(Int32.Parse(Request.Cookies["atm_bills"].Value) / 20 > withdrawalAmt / 20 ) {
+
+                // check that the ATM has sufficient bills to dispense.
+                if(atmBills[7] / 20 > withdrawalAmt / 20 ) {
 
                     // update the user to their new balance amount
                     ((User)Session["loggedInUser"]).Balance -= withdrawalAmt;
@@ -339,11 +400,7 @@ namespace ATMWeb
                     UpdateUser((User)Session["loggedInUser"]).GetAwaiter();
 
                     // update the number of bills remaining in the ATM according to how many we dispensed.
-                    HttpCookie cookie = new HttpCookie("atm_bills");
-                    cookie.Value = "" + (Int32.Parse(Request.Cookies["atm_bills"].Value) - withdrawalAmt / 20);
-                    cookie.Expires = Request.Cookies["atm_bills"].Expires;
-
-                    Response.Cookies.Add(cookie);
+                    atmBills[7] -= withdrawalAmt / 20;
 
                     // display success message.
                     formWithdrawSuccess.Visible = true;
@@ -458,7 +515,6 @@ namespace ATMWeb
             signupErrorText = errorLabel;
             formSignupError.Visible = false;
 
-            amountDepositText.Text = "";
             depositErrorText = errorLabel;
             formDepositError.Visible = false;
             formDepositSuccess.Visible = false;
@@ -483,6 +539,5 @@ namespace ATMWeb
             withdrawErrorText = errorLabel;
             formWithdrawError.Visible = false;
         }
-
     }
 }

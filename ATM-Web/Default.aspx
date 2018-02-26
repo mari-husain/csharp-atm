@@ -1,7 +1,13 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Master.master" Inherits="ATMWeb.Default" Title="My ATM" EnableEventValidation="false" %>
 
 <asp:Content id="Content" ContentPlaceHolderID="Main" runat="server">
-    
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <asp:Label runat="server" id="lblATMBalance" Text="ATM Balance: Undefined" CssClass="navbar-text"></asp:Label>
+            </div>
+        </div>
+    </nav>
 
     <asp:Panel id="formLogin" runat="server" Visible="true" CssClass="container">
             <div class="row" style="padding-top:20px">
@@ -110,14 +116,30 @@
                         <asp:Panel id="formDepositSuccess" runat="server" Visible="false" CssClass="alert alert-success">
                             <asp:Label id="lblDepositSuccess" runat="server" Text="Deposit successful."></asp:Label>
                         </asp:Panel>
+
+                        <p>Please insert cash and coins into the ATM.</p>
                         <form>
-                            <div class="form-group">
-                                <label for="amountDepositText">Amount to Deposit</label>
-                                <asp:TextBox runat="server" CssClass="form-control" id="amountDepositText" />
+                            <div class="row" style="padding-bottom:10px">
+                                <asp:Button runat="server" id="btn_01" CssClass="btn btn-default" Text="$0.01" OnClick="Deposit_Click" Style="width:100px" />
+                                <asp:Button runat="server" id="btn_1" CssClass="btn btn-default" Text="$1" OnClick="Deposit_Click" Style="width:100px" />
+                            </div>
+                            <div class="row" style="padding-bottom:10px">
+                                <asp:Button runat="server" id="btn_05" CssClass="btn btn-default" Text="$0.05" OnClick="Deposit_Click" Style="width:100px" />
+                                <asp:Button runat="server" id="btn_5" CssClass="btn btn-default" Text="$5" OnClick="Deposit_Click" Style="width:100px" />
+                            </div>
+                            <div class="row" style="padding-bottom:10px">
+                                <asp:Button runat="server" id="btn_010" CssClass="btn btn-default" Text="$0.10" OnClick="Deposit_Click" Style="width:100px" />
+                                <asp:Button runat="server" id="btn_10" CssClass="btn btn-default" Text="$10" OnClick="Deposit_Click" Style="width:100px" />
+                            </div>
+                            <div class="row" style="padding-bottom:10px">
+                                <asp:Button runat="server" id="btn_025" CssClass="btn btn-default" Text="$0.25" OnClick="Deposit_Click" Style="width:100px" />
+                                <asp:Button runat="server" id="btn_20" CssClass="btn btn-default" Text="$20" OnClick="Deposit_Click" Style="width:100px" />
+                            </div>
+                            <div class="row" style="padding-bottom:20px">
+                                <asp:Button runat="server" id="btn_50" CssClass="btn btn-default" Text="$50" OnClick="Deposit_Click" Style="width:100px" />
                             </div>
                             
                             <asp:Button runat="server" CssClass="btn btn-default" Text="Back" OnClick="ToHome_Click" />
-                            <asp:Button runat="server" CssClass="btn btn-default" Text="Deposit" OnClick="Deposit_Click" />
                         </form>
                     </div>
                 </div>

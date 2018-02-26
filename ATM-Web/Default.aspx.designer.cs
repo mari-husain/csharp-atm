@@ -66,5 +66,7 @@ namespace ATMWeb {
         protected System.Web.UI.WebControls.Panel formDepositSuccess;
 
         protected System.Web.UI.WebControls.Panel formWithdrawSuccess;
+
+        protected System.Web.UI.WebControls.Label lblATMBalance;
 	}
 }
