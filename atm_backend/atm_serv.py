@@ -139,7 +139,8 @@ def get_bills():
 
 	# if there's no info in the database on the ATM, initialize the ATM to hold 500 $20 bills and nothing else.
 	if atm is None:
-		atm = query_db('INSERT INTO Atm(LastUpdated, Pennies, Nickels, Dimes, Quarters, Ones, Fives, Tens, Twenties, Fifties) VALUES(?, 0, 0, 0, 0, 0, 0, 0, 500, 0)', [datetime.datetime.now().strftime("%Y-%m-%d")], one=True)
+		query_db('INSERT INTO Atm(LastUpdated, Pennies, Nickels, Dimes, Quarters, Ones, Fives, Tens, Twenties, Fifties) VALUES(?, 0, 0, 0, 0, 0, 0, 0, 500, 0)', [datetime.datetime.now().strftime("%Y-%m-%d")], one=True)
+		atm = query_db('SELECT LastUpdated, Pennies, Nickels, Dimes, Quarters, Ones, Fives, Tens, Twenties, Fifties FROM Atm', [], one=True)
 
 	# if today is a later day than the last time we updated the ATM, reset the ATM values.
 	elif atm['LastUpdated'] < datetime.datetime.now().strftime("%Y-%m-%d"):

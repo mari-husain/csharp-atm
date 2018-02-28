@@ -49,6 +49,9 @@ namespace ATMWeb
         public int Fifties { get; set; }
     }
 
+    /* *
+     * CodeBehind - Homepage for the ATM Web App.
+     * */
     public partial class Default : System.Web.UI.Page
     {
         private string errorLabel = "<b>Error</b>";
@@ -72,7 +75,8 @@ namespace ATMWeb
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             }
 
-            // get the ATM from the server and set our ATM label text to reflect the bills in the ATM
+            // if necessary, get the ATM from the server,
+            // set our ATM label text to reflect the bills contained in the ATM
             if (Session["atm"] == null)
             {
                 var atm = GetATMBills().GetAwaiter().GetResult();
@@ -86,6 +90,7 @@ namespace ATMWeb
                 setLblATMBalance((ATM)Session["atm"]);
             }
 
+            // reset error messages
             withdrawErrorText = depositErrorText = signupErrorText = loginErrorText = errorLabel;
         }
 
@@ -96,12 +101,14 @@ namespace ATMWeb
          * */
         public void Page_PreRender() {
 
+            // if we are logged in, show the logout button.
             if(Session["loggedInUser"] != null) {
                 btnLogout.Visible = true;
             } else {
                 btnLogout.Visible = false;
             }
 
+            // if we are logged in, hide the login/signup page and show the transaction page.
             if (Session["loggedInUser"] != null && (formLogin.Visible || formSignUp.Visible))
             {
                 formLogin.Visible = false;
@@ -109,28 +116,33 @@ namespace ATMWeb
                 formTransaction.Visible = true;
             }
 
+            // if there is an error in the login form, show the error message.
             if (loginErrorText != errorLabel) {
                 lblLoginError.Text = loginErrorText.Trim();
                 formLoginError.Visible = true;
             }
 
+            // if there is an error in the signup form, show the error message.
             if (signupErrorText != errorLabel)
             {
                 lblSignupError.Text = signupErrorText.Trim();
                 formSignupError.Visible = true;
             }
 
+            // if there is an error in the deposit form, show the error message.
             if (depositErrorText != errorLabel) {
                 lblDepositError.Text = depositErrorText.Trim();
                 formDepositError.Visible = true;
             }
 
+            // if there is an error in the withdraw form, show the error message.
             if (withdrawErrorText != errorLabel)
             {
                 lblWithdrawError.Text = withdrawErrorText.Trim();
                 formWithdrawError.Visible = true;
             }
 
+            // reset the error labels.
             withdrawErrorText = depositErrorText = signupErrorText = loginErrorText = errorLabel;
         }
 
@@ -167,11 +179,16 @@ namespace ATMWeb
                 try {
                     pin = Int32.Parse(PINText.Text);
 
+                    if(pin < 0) {
+                        throw new FormatException();
+                    }
+
                     // if all fields are valid, initiate the user authentication process
                     if (input_valid)
                     {
                         var user = GetUserByName(firstName, lastName).GetAwaiter().GetResult();
 
+                        // verify password
                         if (user != null && BCrypt.Net.BCrypt.Verify(pin.ToString(), user.PINHash))
                         {
                             // if the user successfully logged in, save their login info.
@@ -218,7 +235,7 @@ namespace ATMWeb
             string pinHash;
             bool input_valid = true;
 
-            // validate user input
+            // input validation
             if (string.IsNullOrWhiteSpace(firstName = firstNameSignupText.Text))
             {
                 signupErrorText += "<br/>" + "Please enter your first name.";
@@ -241,6 +258,9 @@ namespace ATMWeb
                 try
                 {
                     pin = Int32.Parse(PINSignupText.Text);
+                    if(pin < 0) {
+                        throw new FormatException();
+                    }
 
                     if (string.IsNullOrWhiteSpace(PINSignupConfirmText.Text))
                     {
@@ -252,6 +272,9 @@ namespace ATMWeb
                         try
                         {
                             pinConfirmation = Int32.Parse(PINSignupConfirmText.Text);
+                            if(pinConfirmation < 0) {
+                                throw new FormatException();
+                            }
 
                             if(pin != pinConfirmation) {
                                 signupErrorText += "<br/>" + "PINs do not match.";
@@ -259,7 +282,7 @@ namespace ATMWeb
                             } else {
                                 if (input_valid)
                                 {
-                                    // if user input is valid, post the new user to the server.
+                                    // if user input is valid, hash the password and post the new user to the server.
                                     pinHash = BCrypt.Net.BCrypt.HashPassword(pin.ToString(), BCrypt.Net.BCrypt.GenerateSalt(12));
                                     var user = CreateNewUser(firstName, lastName, pinHash).GetAwaiter().GetResult();
 
@@ -287,6 +310,9 @@ namespace ATMWeb
 
         }
 
+        /* *
+         * Takes the user to the homepage.
+         * */
         protected void ToHome_Click(object sender, EventArgs e) {
             resetAllFields();
 
@@ -298,11 +324,19 @@ namespace ATMWeb
             formInquiry.Visible = false;
         }
 
+        /* *
+         * Called when the user clicks the "deposit" button from the transaction form.
+         * Display the deposit form. 
+         * */
         protected void InitDeposit_Click(object sender, EventArgs e) {
             formTransaction.Visible = false;
             formDeposit.Visible = true;
         }
 
+        /* *
+         * Called when the user clicks the "deposit" button from the deposit form.
+         * Initiates the deposit process.
+         * */
         protected void Deposit_Click(object sender, EventArgs e)
         {
             clearAlerts();
@@ -372,12 +406,20 @@ namespace ATMWeb
             }
         }
 
+        /* *
+         * Called when the user clicks the "withdraw" button from the transaction form.
+         * Displays the withdraw form.
+         * */
         protected void InitWithdraw_Click(object sender, EventArgs e)
         {
             formTransaction.Visible = false;
             formWithdraw.Visible = true;
         }
 
+        /* *
+         * Called when the user clicks the "-" button on the withdraw form.
+         * Decrements the amount to be withdrawn by $20.
+         * */
         protected void Withdraw_Decr(object sender, EventArgs e)
         {
             int amountWithdraw = Int32.Parse(amountWithdrawText.Text);
@@ -388,6 +430,10 @@ namespace ATMWeb
             }
         }
 
+        /* *
+         * Called when the user clicks the "+" button from the withdraw form.
+         * Increments the amount to be withdrawn by $20.
+         * */
         protected void Withdraw_Incr(object sender, EventArgs e)
         {
             int amountWithdraw = Int32.Parse(amountWithdrawText.Text);
@@ -397,6 +443,10 @@ namespace ATMWeb
             }
         }
 
+        /* *
+         * Called when the user clicks the "withdraw" button from the withdraw form.
+         * Initiates the withdraw process.
+         * */
         protected void Withdraw_Click(object sender, EventArgs e)
         {
             clearAlerts();
@@ -432,6 +482,10 @@ namespace ATMWeb
             }
         }
 
+        /* *
+         * Called when the user clicks the "balance inquiry" button from the transaction form.
+         * Displays the balance inquiry form.
+         * */
         protected void InitInquiry_Click(object sender, EventArgs e)
         {
             formTransaction.Visible = false;
@@ -439,9 +493,14 @@ namespace ATMWeb
 
             User loggedInUser = (User)Session["loggedInUser"];
 
+            // display the user's balance.
             balanceLbl.Text = "" + String.Format("{0:C}", decimal.Round(loggedInUser.Balance, 2, MidpointRounding.AwayFromZero));
         }
 
+        /* *
+         * Called when the user clicks the "logout" button while signed in.
+         * Logs the user out.
+         * */
         protected void BtnLogout_Click(object sender, EventArgs e) {
             Session["loggedInUser"] = null;
             Response.Redirect(Request.RawUrl);
@@ -453,7 +512,7 @@ namespace ATMWeb
         private async Task<User> GetUserByName(string firstName, string lastName) {
             User user = null;
 
-            HttpResponseMessage response = await client.GetAsync($"api/login?firstName={firstName}&lastName={lastName}");
+            HttpResponseMessage response = await client.GetAsync($"api/login?firstName={firstName.ToLower()}&lastName={lastName.ToLower()}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -475,8 +534,8 @@ namespace ATMWeb
             User user = null;
 
             // create a JSON representing the user.
-            string userRequest = "{\"FirstName\":\"" + firstName + "\"," 
-                                + "\"LastName\":\"" + lastName + "\","
+            string userRequest = "{\"FirstName\":\"" + firstName.ToLower() + "\"," 
+                                + "\"LastName\":\"" + lastName.ToLower() + "\","
                                 + "\"Balance\":\"" + 0.0 + "\"," 
                                 + "\"PINHash\":\"" + pinHash + "\"}";
 
@@ -513,8 +572,8 @@ namespace ATMWeb
         private async Task UpdateUser(User user)
         {
             // create a JSON representing the user.
-            string userRequest = "{\"FirstName\":\"" + user.FirstName + "\","
-                                + "\"LastName\":\"" + user.LastName + "\","
+            string userRequest = "{\"FirstName\":\"" + user.FirstName.ToLower() + "\","
+                                + "\"LastName\":\"" + user.LastName.ToLower() + "\","
                                 + "\"Balance\":\"" + user.Balance + "\"}";
 
             // convert the JSON string to httpContent so we can send it using HttpResponseMessage
@@ -523,6 +582,9 @@ namespace ATMWeb
             HttpResponseMessage response = await client.PostAsync($"api/update", httpContent);
         }
 
+        /* *
+         * Send a GET request to the server to get the ATM state.
+         * */
         private async Task<ATM> GetATMBills() {
             ATM atm = null;
 
@@ -540,6 +602,9 @@ namespace ATMWeb
             return atm;
         }
 
+        /* *
+         * Send a POST request to update the ATM state.
+         * */
         private async Task UpdateATM(ATM atm) {
             // create a JSON representing the ATM.
             string userRequest = "{\"Pennies\":\"" + atm.Pennies + "\","
@@ -558,6 +623,9 @@ namespace ATMWeb
             HttpResponseMessage response = await client.PostAsync($"api/atm", httpContent);
         }
 
+        /* *
+         * Reset all fields and labels.
+         * */
         private void resetAllFields() {
             firstNameText.Text = "";
             lastNameText.Text = "";
@@ -584,6 +652,9 @@ namespace ATMWeb
             formWithdrawSuccess.Visible = false;
         }
 
+        /* *
+         * Reset all labels.
+         * */
         private void clearAlerts() {
             loginErrorText = errorLabel;
             formLoginError.Visible = false;
@@ -600,6 +671,9 @@ namespace ATMWeb
             formWithdrawSuccess.Visible = false;
         }
 
+        /* *
+         * Update the ATM balance label to reflect the state of the given ATM.
+         * */
         private void setLblATMBalance(ATM atm) {
             lblATMBalance.Text = "ATM Balance: " + "$0.01 - " + atm.Pennies + " | $0.05 - " + atm.Nickels + " | 0.10 - " + atm.Dimes + " | 0.25 - " + atm.Quarters 
                 + " | $1 - " + atm.Ones + " | $5 - " + atm.Fives + " | $10 - " + atm.Tens + " | $20 - " + atm.Twenties + " | $50 - " + atm.Fifties;
