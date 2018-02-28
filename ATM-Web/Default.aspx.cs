@@ -439,7 +439,7 @@ namespace ATMWeb
 
             User loggedInUser = (User)Session["loggedInUser"];
 
-            balanceLbl.Text = "" + loggedInUser.Balance;
+            balanceLbl.Text = "" + String.Format("{0:C}", decimal.Round(loggedInUser.Balance, 2, MidpointRounding.AwayFromZero));
         }
 
         protected void BtnLogout_Click(object sender, EventArgs e) {
