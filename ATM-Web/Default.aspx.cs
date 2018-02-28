@@ -9,19 +9,18 @@ using System.Threading.Tasks;
 using System.Text;
 using Newtonsoft.Json;
 using System.Web.UI.WebControls;
+using BCrypt.Net;
 
 namespace ATMWeb
 {
-    // TODO: Add encryption
     // TODO: Code refactor
-    // TODO: Consolidate error messages
 
     [Serializable]
     public class User {
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public double Balance { get; set; }
-        public int PIN { get; set; }
+        public decimal Balance { get; set; }
+        public string PINHash { get; set; }
 
         public User() {
             FirstName = "John";
@@ -29,11 +28,25 @@ namespace ATMWeb
             Balance = 1000;
         }
 
-        public User(string _firstName, string _lastName, double _balance) {
+        public User(string _firstName, string _lastName, decimal _balance) {
             FirstName = _firstName;
             LastName = _lastName;
             Balance = _balance;
         }
+    }
+
+    [Serializable]
+    public class ATM {
+        public string LastUpdated { get; set; }
+        public int Pennies { get; set; }
+        public int Nickels { get; set; }
+        public int Dimes { get; set; }
+        public int Quarters { get; set; }
+        public int Ones { get; set; }
+        public int Fives { get; set; }
+        public int Tens { get; set; }
+        public int Twenties { get; set; }
+        public int Fifties { get; set; }
     }
 
     public partial class Default : System.Web.UI.Page
@@ -43,8 +56,6 @@ namespace ATMWeb
         private string signupErrorText;
         private string depositErrorText;
         private string withdrawErrorText;
-
-        private int[] atmBills;
 
         private static readonly HttpClient client = new HttpClient();
 
@@ -59,25 +70,21 @@ namespace ATMWeb
                 client.BaseAddress = new Uri("http://localhost:5000/");
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            }
 
-                if(atmBills == null) {
-                    atmBills = new int[] { 0, 0, 0, 0, 0, 0, 0, 500, 0 };
+            // get the ATM from the server and set our ATM label text to reflect the bills in the ATM
+            if (Session["atm"] == null)
+            {
+                var atm = GetATMBills().GetAwaiter().GetResult();
+
+                if (atm != null)
+                {
+                    Session["atm"] = atm;
+                    setLblATMBalance(atm);
                 }
-
-                /* if(Request.Cookies["atm_bills"] == null || Request.Cookies["atm_bills"].Expires < DateTime.Now){
-
-                    HttpCookie cookie = new HttpCookie("atm_bills");
-                    cookie.Value = "0,0,0,0,0,0,0,500,0";
-                    cookie.Expires = DateTime.Now.AddDays(1.0);
-                    HttpContext.Current.Response.SetCookie(cookie);
-
-                    atm_bills = new int[] { 0, 0, 0, 0, 0, 0, 0, 500, 0 }; 
-
-                } */
-            } 
-
-            lblATMBalance.Text = "ATM Balance: " + "$0.01 - " + atmBills[0] + " | $0.05 - " + atmBills[1] + " | 0.10 - " + atmBills[2] + " | 0.25 - " + atmBills[3] 
-                + " | $1 - " + atmBills[4] + " | $5 - " + atmBills[5] + " | $10 - " + atmBills[6] + " | $20 - " + atmBills[7] + " | $50 - " + atmBills[8];
+            } else {
+                setLblATMBalance((ATM)Session["atm"]);
+            }
 
             withdrawErrorText = depositErrorText = signupErrorText = loginErrorText = errorLabel;
         }
@@ -89,7 +96,13 @@ namespace ATMWeb
          * */
         public void Page_PreRender() {
 
-            if (Session["loggedInUser"] != null && formLogin.Visible)
+            if(Session["loggedInUser"] != null) {
+                btnLogout.Visible = true;
+            } else {
+                btnLogout.Visible = false;
+            }
+
+            if (Session["loggedInUser"] != null && (formLogin.Visible || formSignUp.Visible))
             {
                 formLogin.Visible = false;
                 formSignUp.Visible = false;
@@ -157,12 +170,11 @@ namespace ATMWeb
                     // if all fields are valid, initiate the user authentication process
                     if (input_valid)
                     {
-                        var user = CheckLogin(firstName, lastName, pin).GetAwaiter().GetResult();
+                        var user = GetUserByName(firstName, lastName).GetAwaiter().GetResult();
 
-                        if (user != null)
+                        if (user != null && BCrypt.Net.BCrypt.Verify(pin.ToString(), user.PINHash))
                         {
                             // if the user successfully logged in, save their login info.
-                            user.PIN = pin;
                             Session["loggedInUser"] = user;
                         }
                         else
@@ -203,6 +215,7 @@ namespace ATMWeb
             string lastName;
             int pin;
             int pinConfirmation;
+            string pinHash;
             bool input_valid = true;
 
             // validate user input
@@ -247,12 +260,12 @@ namespace ATMWeb
                                 if (input_valid)
                                 {
                                     // if user input is valid, post the new user to the server.
-                                    var user = CreateNewUser(firstName, lastName, pin).GetAwaiter().GetResult();
+                                    pinHash = BCrypt.Net.BCrypt.HashPassword(pin.ToString(), BCrypt.Net.BCrypt.GenerateSalt(12));
+                                    var user = CreateNewUser(firstName, lastName, pinHash).GetAwaiter().GetResult();
 
                                     if (user != null)
                                     {
                                         // if the user was successfully created, log them in and save their login info.
-                                        user.PIN = pin;
                                         Session["loggedInUser"] = user;
                                     }
                                 }
@@ -296,58 +309,63 @@ namespace ATMWeb
 
             Button btn = (Button)sender;
             string id = btn.ID;
+            ATM atm = (ATM)Session["atm"];
 
-            double depositAmt = 0;
+            decimal depositAmt = 0;
 
             // update the amount of bills the ATM contains
-            switch(id) {
+            switch (id)
+            {
                 case "btn_01":
-                    depositAmt = 0.01;
-                    atmBills[0]++;
+                    depositAmt = 0.01M;
+                    atm.Pennies++;
                     break;
                 case "btn_05":
-                    depositAmt = 0.05;
-                    atmBills[1]++;
+                    depositAmt = 0.05M;
+                    atm.Nickels++;
                     break;
                 case "btn_010":
-                    depositAmt = 0.10;
-                    atmBills[2]++;
+                    depositAmt = 0.10M;
+                    atm.Dimes++;
                     break;
                 case "btn_025":
-                    depositAmt = 0.25;
-                    atmBills[3]++;
+                    depositAmt = 0.25M;
+                    atm.Quarters++;
                     break;
                 case "btn_1":
                     depositAmt = 1;
-                    atmBills[4]++;
+                    atm.Ones++;
                     break;
                 case "btn_5":
                     depositAmt = 5;
-                    atmBills[5]++;
+                    atm.Fives++;
                     break;
                 case "btn_10":
                     depositAmt = 10;
-                    atmBills[6]++;
+                    atm.Tens++;
                     break;
                 case "btn_20":
                     depositAmt = 20;
-                    atmBills[7]++;
+                    atm.Twenties++;
                     break;
                 case "btn_50":
                     depositAmt = 50;
-                    atmBills[8]++;
+                    atm.Fifties++;
                     break;
                 default:
                     break;
             }
 
-            if(depositAmt.CompareTo(0) != 0) {
+            if(depositAmt > 0) {
                 
                 // update the user to their new balance amount
                 ((User)Session["loggedInUser"]).Balance += depositAmt;
 
                 // POST the updated user balance to the server
                 UpdateUser((User)Session["loggedInUser"]).GetAwaiter();
+
+                // POST the udpated ATM balance to the server
+                UpdateATM((ATM)Session["atm"]).GetAwaiter();
 
                 // display success message
                 formDepositSuccess.Visible = true;
@@ -373,9 +391,8 @@ namespace ATMWeb
         protected void Withdraw_Incr(object sender, EventArgs e)
         {
             int amountWithdraw = Int32.Parse(amountWithdrawText.Text);
-            int atm20Bills = atmBills[7];
 
-            if(amountWithdraw / 20 < atm20Bills) {
+            if(amountWithdraw / 20 < ((ATM)Session["atm"]).Twenties) {
                 amountWithdrawText.Text = "" + (amountWithdraw + 20);
             }
         }
@@ -391,7 +408,7 @@ namespace ATMWeb
 
 
                 // check that the ATM has sufficient bills to dispense.
-                if(atmBills[7] / 20 > withdrawalAmt / 20 ) {
+                if(((ATM)Session["atm"]).Twenties > withdrawalAmt / 20 ) {
 
                     // update the user to their new balance amount
                     ((User)Session["loggedInUser"]).Balance -= withdrawalAmt;
@@ -400,7 +417,10 @@ namespace ATMWeb
                     UpdateUser((User)Session["loggedInUser"]).GetAwaiter();
 
                     // update the number of bills remaining in the ATM according to how many we dispensed.
-                    atmBills[7] -= withdrawalAmt / 20;
+                    ((ATM)Session["atm"]).Twenties -= withdrawalAmt / 20;
+
+                    // POST the updated ATM balance to the server.
+                    UpdateATM((ATM)Session["atm"]).GetAwaiter();
 
                     // display success message.
                     formWithdrawSuccess.Visible = true;
@@ -422,13 +442,18 @@ namespace ATMWeb
             balanceLbl.Text = "" + loggedInUser.Balance;
         }
 
+        protected void BtnLogout_Click(object sender, EventArgs e) {
+            Session["loggedInUser"] = null;
+            Response.Redirect(Request.RawUrl);
+        }
+
         /* *
          * Sent a GET request to a server to authenticate the given user.
          * */
-        private async Task<User> CheckLogin(string firstName, string lastName, int pin) {
+        private async Task<User> GetUserByName(string firstName, string lastName) {
             User user = null;
 
-            HttpResponseMessage response = await client.GetAsync($"api/login?firstName={firstName}&lastName={lastName}&pin={pin}");
+            HttpResponseMessage response = await client.GetAsync($"api/login?firstName={firstName}&lastName={lastName}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -445,7 +470,7 @@ namespace ATMWeb
         /* *
          * Sent a POST request to a server to create the given user.
          * */
-        private async Task<User> CreateNewUser(string firstName, string lastName, int pin)
+        private async Task<User> CreateNewUser(string firstName, string lastName, string pinHash)
         {
             User user = null;
 
@@ -453,7 +478,7 @@ namespace ATMWeb
             string userRequest = "{\"FirstName\":\"" + firstName + "\"," 
                                 + "\"LastName\":\"" + lastName + "\","
                                 + "\"Balance\":\"" + 0.0 + "\"," 
-                                + "\"PIN\":\"" + pin + "\"}";
+                                + "\"PINHash\":\"" + pinHash + "\"}";
 
             // convert the JSON string to httpContent so we can send it using HttpResponseMessage
             var httpContent = new StringContent(userRequest, Encoding.UTF8, "application/json");
@@ -490,13 +515,47 @@ namespace ATMWeb
             // create a JSON representing the user.
             string userRequest = "{\"FirstName\":\"" + user.FirstName + "\","
                                 + "\"LastName\":\"" + user.LastName + "\","
-                                + "\"Balance\":\"" + user.Balance + "\","
-                                + "\"PIN\":\"" + user.PIN + "\"}";
+                                + "\"Balance\":\"" + user.Balance + "\"}";
 
             // convert the JSON string to httpContent so we can send it using HttpResponseMessage
             var httpContent = new StringContent(userRequest, Encoding.UTF8, "application/json");
 
             HttpResponseMessage response = await client.PostAsync($"api/update", httpContent);
+        }
+
+        private async Task<ATM> GetATMBills() {
+            ATM atm = null;
+
+            HttpResponseMessage response = await client.GetAsync($"api/atm");
+
+            if (response.IsSuccessStatusCode)
+            {
+                // get data as a JSON string
+                string data = await response.Content.ReadAsStringAsync();
+
+                // deserialize response to User class
+                atm = JsonConvert.DeserializeObject<ATM>(data);
+            }
+
+            return atm;
+        }
+
+        private async Task UpdateATM(ATM atm) {
+            // create a JSON representing the ATM.
+            string userRequest = "{\"Pennies\":\"" + atm.Pennies + "\","
+                                + "\"Nickels\":\"" + atm.Nickels + "\","                         
+                                + "\"Dimes\":\"" + atm.Dimes + "\","                         
+                                + "\"Quarters\":\"" + atm.Quarters + "\","                         
+                                + "\"Ones\":\"" + atm.Ones + "\","                         
+                                + "\"Fives\":\"" + atm.Fives + "\","                         
+                                + "\"Tens\":\"" + atm.Tens + "\","
+                                + "\"Twenties\":\"" + atm.Twenties + "\","
+                                + "\"Fifties\":\"" + atm.Fifties + "\"}";
+
+            // convert the JSON string to httpContent so we can send it using HttpResponseMessage
+            var httpContent = new StringContent(userRequest, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await client.PostAsync($"api/atm", httpContent);
         }
 
         private void resetAllFields() {
@@ -538,6 +597,13 @@ namespace ATMWeb
 
             withdrawErrorText = errorLabel;
             formWithdrawError.Visible = false;
+            formWithdrawSuccess.Visible = false;
+        }
+
+        private void setLblATMBalance(ATM atm) {
+            lblATMBalance.Text = "ATM Balance: " + "$0.01 - " + atm.Pennies + " | $0.05 - " + atm.Nickels + " | 0.10 - " + atm.Dimes + " | 0.25 - " + atm.Quarters 
+                + " | $1 - " + atm.Ones + " | $5 - " + atm.Fives + " | $10 - " + atm.Tens + " | $20 - " + atm.Twenties + " | $50 - " + atm.Fifties;
+            
         }
     }
 }

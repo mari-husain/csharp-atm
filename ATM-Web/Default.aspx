@@ -2,10 +2,9 @@
 
 <asp:Content id="Content" ContentPlaceHolderID="Main" runat="server">
     <nav class="navbar navbar-default">
-        <div class="container-fluid">
-            <div class="navbar-header">
-                <asp:Label runat="server" id="lblATMBalance" Text="ATM Balance: Undefined" CssClass="navbar-text"></asp:Label>
-            </div>
+        <div class="container-fluid" style="padding-right:40px">
+            <asp:Label runat="server" id="lblATMBalance" Text="ATM Balance: Undefined" CssClass="navbar-text navbar-left"></asp:Label>
+            <asp:Button runat="server" id="btnLogout" Text="Logout" CssClass="btn btn-default navbar-btn navbar-right" OnClick="BtnLogout_Click" />
         </div>
     </nav>
 
