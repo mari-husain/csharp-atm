@@ -70,6 +70,8 @@
     <Compile Include="Master.master.designer.cs">
       <DependentUpon>Master.master</DependentUpon>
     </Compile>
+    <Compile Include="ATM.cs" />
+    <Compile Include="User.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
