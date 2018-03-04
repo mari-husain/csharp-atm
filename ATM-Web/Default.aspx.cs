@@ -24,7 +24,8 @@ namespace ATMWeb
         private string depositErrorText;
         private string withdrawErrorText;
 
-        private static readonly HttpClient client = new HttpClient();
+        private readonly HttpClient client = new HttpClient();
+        //private static readonly HttpClient client = new HttpClient();
 
         /* *
          * Initialize the page.
