@@ -24,19 +24,17 @@ namespace ATMWeb
         private string depositErrorText;
         private string withdrawErrorText;
 
-        private readonly HttpClient client = new HttpClient();
-        //private static readonly HttpClient client = new HttpClient();
+        private static readonly HttpClient client = new HttpClient();
 
         /* *
          * Initialize the page.
          * */
         public void Page_Load() {
-
+            
             if (!IsPostBack)
             {
                 // tell the client where the API is located
                 client.BaseAddress = new Uri("https://atm-backend.herokuapp.com/");
-                //client.BaseAddress = new Uri("http://localhost:5000/");
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             }
@@ -66,7 +64,7 @@ namespace ATMWeb
          * (i.e. what to show, what to hide) 
          * */
         public void Page_PreRender() {
-
+            
             // if we are logged in, show the logout button.
             if(Session["loggedInUser"] != null) {
                 btnLogout.Visible = true;
@@ -478,15 +476,16 @@ namespace ATMWeb
         private async Task<User> GetUserByName(string firstName, string lastName) {
             User user = null;
 
-            HttpResponseMessage response = await client.GetAsync($"api/login?firstName={firstName.ToLower()}&lastName={lastName.ToLower()}");
-
-            if (response.IsSuccessStatusCode)
+            using (HttpResponseMessage response = await client.GetAsync($"api/login?firstName={firstName.ToLower()}&lastName={lastName.ToLower()}"))
             {
-                // get data as a JSON string
-                string data = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                {
+                    // get data as a JSON string
+                    string data = await response.Content.ReadAsStringAsync();
 
-                // deserialize response to User class
-                user = JsonConvert.DeserializeObject<User>(data);
+                    // deserialize response to User class
+                    user = JsonConvert.DeserializeObject<User>(data);
+                }
             }
 
             return user;
@@ -508,23 +507,27 @@ namespace ATMWeb
             // convert the JSON string to httpContent so we can send it using HttpResponseMessage
             var httpContent = new StringContent(userRequest, Encoding.UTF8, "application/json");
 
-            HttpResponseMessage response = await client.PostAsync($"api/account", httpContent);
-
-            if (response.IsSuccessStatusCode)
+            using (HttpResponseMessage response = await client.PostAsync($"api/account", httpContent))
             {
-                // get data as a JSON string
-                string data = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                {
+                    // get data as a JSON string
+                    string data = await response.Content.ReadAsStringAsync();
 
-                //use JavaScriptSerializer from System.Web.Script.Serialization
-                JavaScriptSerializer JSserializer = new JavaScriptSerializer();
+                    //use JavaScriptSerializer from System.Web.Script.Serialization
+                    JavaScriptSerializer JSserializer = new JavaScriptSerializer();
 
-                // deserialize response to User class
-                user = JSserializer.Deserialize<User>(data);
+                    // deserialize response to User class
+                    user = JSserializer.Deserialize<User>(data);
 
-            } else {
-                // if the username is already in use, the server will return a 409 error.
-                if(response.StatusCode == HttpStatusCode.Conflict) {
-                    signupErrorText += "<br>" + "User already exists. Please login.";
+                }
+                else
+                {
+                    // if the username is already in use, the server will return a 409 error.
+                    if (response.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        signupErrorText += "<br>" + "User already exists. Please login.";
+                    }
                 }
             }
 
@@ -545,7 +548,9 @@ namespace ATMWeb
             // convert the JSON string to httpContent so we can send it using HttpResponseMessage
             var httpContent = new StringContent(userRequest, Encoding.UTF8, "application/json");
 
-            HttpResponseMessage response = await client.PostAsync($"api/update", httpContent);
+            using(HttpResponseMessage response = await client.PostAsync($"api/update", httpContent)) {
+                // nothing
+            }
         }
 
         /* *
@@ -554,15 +559,16 @@ namespace ATMWeb
         private async Task<ATM> GetATMBills() {
             ATM atm = null;
 
-            HttpResponseMessage response = await client.GetAsync($"api/atm");
-
-            if (response.IsSuccessStatusCode)
+            using (HttpResponseMessage response = await client.GetAsync($"api/atm"))
             {
-                // get data as a JSON string
-                string data = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                {
+                    // get data as a JSON string
+                    string data = await response.Content.ReadAsStringAsync();
 
-                // deserialize response to User class
-                atm = JsonConvert.DeserializeObject<ATM>(data);
+                    // deserialize response to User class
+                    atm = JsonConvert.DeserializeObject<ATM>(data);
+                }
             }
 
             return atm;
@@ -586,7 +592,9 @@ namespace ATMWeb
             // convert the JSON string to httpContent so we can send it using HttpResponseMessage
             var httpContent = new StringContent(userRequest, Encoding.UTF8, "application/json");
 
-            HttpResponseMessage response = await client.PostAsync($"api/atm", httpContent);
+            using(HttpResponseMessage response = await client.PostAsync($"api/atm", httpContent)) {
+                // nothing
+            }
         }
 
         /* *
