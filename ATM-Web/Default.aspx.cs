@@ -34,6 +34,7 @@ namespace ATMWeb
             if (!IsPostBack)
             {
                 // tell the client where the API is located
+                //client.BaseAddress = new Uri("http://localhost:5000/");
                 client.BaseAddress = new Uri("https://atm-backend.herokuapp.com/");
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
